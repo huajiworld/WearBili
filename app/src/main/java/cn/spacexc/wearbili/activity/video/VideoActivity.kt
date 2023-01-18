@@ -4,16 +4,14 @@ import OnClickListerExtended
 import android.annotation.SuppressLint
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
-import androidx.lifecycle.lifecycleScope
 import androidx.viewpager2.widget.ViewPager2
 import cn.spacexc.wearbili.adapter.VideoViewPagerAdapter
 import cn.spacexc.wearbili.databinding.ActivityVideoBinding
 import cn.spacexc.wearbili.fragment.CommentFragment
-import cn.spacexc.wearbili.utils.TimeUtils
 import cn.spacexc.wearbili.utils.VideoUtils
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 
+const val VIDEO_ID_AV = "aid"
+const val VIDEO_ID_BV = "bvid"
 
 class VideoActivity : AppCompatActivity() {
     private lateinit var binding: ActivityVideoBinding
@@ -63,7 +61,7 @@ class VideoActivity : AppCompatActivity() {
 
     }
 
-    var currentVideo: cn.spacexc.wearbili.dataclass.videoDetail.Data? = null
+    var currentVideo: cn.spacexc.wearbili.dataclass.videoDetail.web.Data? = null
     var isInitialized = false
 
     val videoId: String
@@ -85,6 +83,19 @@ class VideoActivity : AppCompatActivity() {
                 return intent.getStringExtra("videoId")!!
             }
         }
+    val videoIdType: String
+        get() {
+            if (intent.getStringExtra("videoId").isNullOrEmpty()) {
+                return if (intent.data?.path.isNullOrBlank()) {
+                    return if (intent.data?.getQueryParameter("bvid") == null) VIDEO_ID_AV
+                    else VIDEO_ID_BV
+                } else {
+                    VIDEO_ID_AV
+                }
+            } else {
+                return intent.getStringExtra("videoIdType")!!
+            }
+        }
 
     /*fun getId(): String {
         if (!intent.getStringExtra("videoId")
@@ -103,11 +114,6 @@ class VideoActivity : AppCompatActivity() {
         ) return intent.data?.getQueryParameter("bvid")
         //return null
     }*/
-
-    fun setPage(page: Int) {
-        binding.viewPager2.currentItem = page - 1
-    }
-
 
     /*private var startY = 0f //手指按下时的Y坐标
 

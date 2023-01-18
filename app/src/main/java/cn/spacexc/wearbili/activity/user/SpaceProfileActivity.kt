@@ -42,7 +42,6 @@ import cn.spacexc.wearbili.R
 import cn.spacexc.wearbili.ui.*
 import cn.spacexc.wearbili.ui.ModifierExtends.clickVfx
 import cn.spacexc.wearbili.utils.NumberUtils.toShortChinese
-import cn.spacexc.wearbili.utils.TimeUtils.toDateStr
 import cn.spacexc.wearbili.utils.ifNullOrEmpty
 import cn.spacexc.wearbili.utils.parseColor
 import cn.spacexc.wearbili.viewmodel.UserSpaceViewModel
@@ -79,8 +78,9 @@ class SpaceProfileActivity : AppCompatActivity() {
         val userMid = intent.getLongExtra("userMid", 0)
         viewModel.getUser(userMid)
         viewModel.getVideos(userMid, true)
-        viewModel.getDynamic(userMid)
+        viewModel.getDynamic(true, userMid)
         viewModel.checkSubscribe(userMid)
+        viewModel.getUserFans(userMid)
         setContent {
             val localDensity = LocalDensity.current
             val user by viewModel.user.observeAsState()
@@ -90,10 +90,11 @@ class SpaceProfileActivity : AppCompatActivity() {
             val collapsingState = rememberCollapsingToolbarScaffoldState()
             val pagerState = rememberPagerState()
             val userVideos by viewModel.videos.observeAsState()
-            val dynamicList by viewModel.dynamicCardList.observeAsState()
+            val dynamicList by viewModel.dynamicItemList.observeAsState()
             val scope = rememberCoroutineScope()
             val isError by viewModel.isError.observeAsState()
             val isSubscribed by viewModel.isFollowed.observeAsState()
+            val fans by viewModel.fans.observeAsState()
             val followButtonColor by animateColorAsState(
                 targetValue = if (isSubscribed == true) Color(
                     63,
@@ -108,13 +109,13 @@ class SpaceProfileActivity : AppCompatActivity() {
             CirclesBackground.RegularBackgroundWithTitleAndBackArrow(
                 title = "个人空间",
                 onBack = { finish() },
-                isLoading = user == null,
+                isLoading = user == null || fans == null || isSubscribed == null || userVideos == null || dynamicList == null,
                 isError = isError == true,
                 errorRetry = {
                     viewModel.isError.value = false
                     viewModel.getUser(userMid)
                     viewModel.getVideos(userMid, true)
-                    viewModel.getDynamic(userMid)
+                    viewModel.getDynamic(true, userMid)
                     viewModel.checkSubscribe(userMid)
                 }
             ) {
@@ -234,7 +235,7 @@ class SpaceProfileActivity : AppCompatActivity() {
                                         Text(
                                             text = user?.data?.name ?: "加载中",
                                             fontFamily = puhuiFamily,
-                                            fontSize = 16.sp,
+                                            fontSize = 10.sp,
                                             fontWeight = FontWeight.Bold,
                                             color = parseColor(user?.data?.vip?.nickname_color.ifNullOrEmpty { "#FFFFFF" })
                                             //modifier = Modifier.scale(collapsingState.toolbarState.progress)
@@ -256,7 +257,7 @@ class SpaceProfileActivity : AppCompatActivity() {
                                                     },
                                                 maxLines = maxLines,
                                                 fontFamily = puhuiFamily,
-                                                fontSize = 12.sp,
+                                                fontSize = 8.5.sp,
                                                 overflow = TextOverflow.Ellipsis
                                             )
                                         }
@@ -307,7 +308,7 @@ class SpaceProfileActivity : AppCompatActivity() {
 
                                             Spacer(modifier = Modifier.width(4.dp))
                                             Text(
-                                                text = if (isSubscribed == true) "已关注" else "关注",
+                                                text = "${if (isSubscribed == true) "已关注" else "关注"}  ${(fans ?: 0).toShortChinese()}",
                                                 color = Color.White,
                                                 fontFamily = puhuiFamily,
                                                 fontWeight = FontWeight.Medium,
@@ -321,7 +322,7 @@ class SpaceProfileActivity : AppCompatActivity() {
                                                         buttonTextHeight = with(localDensity) {
                                                             it.size.height.toDp()
                                                         }
-                                                    }, fontSize = 12.sp
+                                                    }, fontSize = 8.sp
                                             )
                                         }
                                     }
@@ -384,7 +385,7 @@ class SpaceProfileActivity : AppCompatActivity() {
                                             },
                                             textStyle = TextStyle(
                                                 color = Color.White,
-                                                fontSize = 14.sp,
+                                                fontSize = 10.sp,
                                                 fontFamily = puhuiFamily
                                             ),
                                             cursorBrush = SolidColor(
@@ -493,20 +494,10 @@ class SpaceProfileActivity : AppCompatActivity() {
                                             modifier = Modifier.fillMaxSize(),
                                             //contentPadding = PaddingValues(vertical = 4.dp)
                                         ) {
-                                            dynamicList?.forEach { card ->
+                                            dynamicList?.forEach { item ->
                                                 item {
-                                                    DynamicCard(
-                                                        posterAvatar = card.desc.user_profile.info.face,
-                                                        posterName = card.desc.user_profile.info.uname,
-                                                        posterNameColor = if (!card.desc.user_profile.vip.nickname_color.isNullOrEmpty()) Color(
-                                                            android.graphics.Color.parseColor(
-                                                                card.desc.user_profile.vip.nickname_color
-                                                            )
-                                                        ) else Color.White,
-                                                        postTime = (card.desc.timestamp * 1000).toDateStr(
-                                                            "MM-dd HH:mm"
-                                                        ),
-                                                        card = card,
+                                                    DynamicCardNew(
+                                                        item = item,
                                                         context = this@SpaceProfileActivity
                                                     )
                                                 }
@@ -514,7 +505,7 @@ class SpaceProfileActivity : AppCompatActivity() {
                                             if (!dynamicList.isNullOrEmpty()) {
                                                 item {
                                                     LaunchedEffect(key1 = Unit) {
-                                                        viewModel.getMoreDynamic(userMid)
+                                                        viewModel.getDynamic(false, userMid)
                                                     }
                                                 }
                                             }
@@ -560,7 +551,7 @@ class SpaceProfileActivity : AppCompatActivity() {
                         interactionSource = MutableInteractionSource(),
                         indication = null,
                         onClick = { onClick() }),
-                fontWeight = FontWeight.Medium, fontSize = 14.sp
+                fontWeight = FontWeight.Medium, fontSize = 10.sp
 
             )
             Spacer(modifier = Modifier.width(4.dp))

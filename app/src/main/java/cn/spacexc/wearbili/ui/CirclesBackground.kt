@@ -19,6 +19,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.wear.compose.material.Icon
@@ -99,6 +100,7 @@ object CirclesBackground {
         isLoading: Boolean = false,
         isError: Boolean = false,
         errorRetry: () -> Unit = {},
+        contentHeight: (Dp) -> Unit = {},
         content: @Composable () -> Unit
     ) {
         val timeSource = TimeTextDefaults.timeSource("HH:mm")
@@ -162,7 +164,7 @@ object CirclesBackground {
                             if (isRound()) {
                                 Text(
                                     text = title,
-                                    fontSize = 16.sp,
+                                    fontSize = 10.sp,
                                     fontFamily = puhuiFamily,
                                     fontWeight = FontWeight.Bold,
                                     color = Color.White,
@@ -200,16 +202,15 @@ object CirclesBackground {
                                             imageVector = Icons.Default.ArrowBackIos,
                                             contentDescription = null,
                                             modifier = Modifier
-                                                .height(16.dp)
-                                                .width(16.dp)
+                                                .size(textHeight.times(0.7f))
                                                 .align(Alignment.CenterVertically)
-                                                .offset(y = 0.9f.dp),
+                                                .offset(y = (0.5).dp),
                                             tint = Color.White
                                         )
                                         //Spacer(Modifier.width(2.dp))
                                         Text(
                                             text = title,
-                                            fontSize = 16.sp,
+                                            fontSize = 11.sp,
                                             fontFamily = puhuiFamily,
                                             fontWeight = FontWeight.Bold,
                                             color = Color.White,
@@ -225,7 +226,7 @@ object CirclesBackground {
                                         Spacer(modifier = Modifier.weight(1f))
                                         Text(
                                             text = timeText,
-                                            fontSize = 16.sp,
+                                            fontSize = 11.sp,
                                             fontFamily = googleSansFamily,
                                             fontWeight = FontWeight.Medium,
                                             color = Color.White,
@@ -234,10 +235,15 @@ object CirclesBackground {
                                     }
                                 }
                             }
-
                             Spacer(Modifier.height(6.dp))
                         }   //标题栏
-                        content()
+                        Box(modifier = Modifier
+                            .fillMaxWidth()
+                            .onGloballyPositioned {
+                                contentHeight(with(localDensity) { it.size.height.toDp() })
+                            }) {
+                            content()
+                        }
                     }   //内容
                 } else {
                     Crossfade(targetState = isError) { error ->

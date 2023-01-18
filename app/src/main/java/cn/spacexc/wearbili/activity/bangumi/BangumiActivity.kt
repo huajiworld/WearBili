@@ -18,11 +18,18 @@ class BangumiActivity : AppCompatActivity() {
     val viewModel by viewModels<BangumiViewModel>()
     private lateinit var binding: ActivityVideoBinding
 
+    lateinit var idType: String
+    var cid: Long = 0L
+    lateinit var id: String
+
     @SuppressLint("ClickableViewAccessibility")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityVideoBinding.inflate(layoutInflater)
         setContentView(binding.root)
+        id = intent.getStringExtra("id") ?: ""
+        idType = intent.getStringExtra("idType") ?: ID_TYPE_EPID
+        cid = intent.getLongExtra("cid", 0L)
         viewModel.getBangumi(
             idType = intent.getStringExtra("idType") ?: ID_TYPE_EPID,
             id = intent.getStringExtra("id") ?: ""
@@ -63,5 +70,9 @@ class BangumiActivity : AppCompatActivity() {
 //            }
 //        }
         binding.pageName.setOnClickListener { finish() }
+    }
+
+    fun pagerScrollTo(index: Int) {
+        binding.viewPager2.currentItem = index
     }
 }

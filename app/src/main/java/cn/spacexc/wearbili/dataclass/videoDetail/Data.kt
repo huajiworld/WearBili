@@ -45,7 +45,9 @@ data class Data(
     val tid: Long,
     val title: String,
     val tname: String,
-    val videos: Int
+    val videos: Int,
+    val staff: List<Staff>?,
+    val honor: Honor?
 ) {
-    data class Pages(val pages: List<Page>)
+    data class Pages(val pages: List<cn.spacexc.wearbili.dataclass.videoDetail.web.Page>)
 }

@@ -3,6 +3,8 @@ package cn.spacexc.wearbili.manager
 import android.util.Log
 import cn.spacexc.wearbili.Application
 import cn.spacexc.wearbili.Application.Companion.TAG
+import cn.spacexc.wearbili.dataclass.VideoComment
+import cn.spacexc.wearbili.dataclass.comment.reply.CommentReply
 import cn.spacexc.wearbili.dataclass.search.Search
 import cn.spacexc.wearbili.dataclass.video.rcmd.web.WebRecommendVideo
 import cn.spacexc.wearbili.dataclass.video.state.CoinState
@@ -22,6 +24,7 @@ import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.launch
 import okhttp3.*
 import java.io.IOException
+import java.net.URLEncoder
 
 /**
  * Created by XC-Qan on 2022/6/10.
@@ -93,6 +96,84 @@ object VideoManager {
         )
     }
 
+    fun getCommentsByLikes(
+        aid: Long,
+        page: Int,
+        onFailed: (Exception?) -> Unit,
+        onSuccess: (VideoComment) -> Unit
+    ) {
+        NetworkUtils.getUrl(
+            "https://api.bilibili.com/x/v2/reply/main?type=1&oid=$aid&sort=1&next=$page".log(),
+            object : Callback {
+                override fun onFailure(call: Call, e: IOException) {
+                    onFailed(e)
+                }
+
+                override fun onResponse(call: Call, response: Response) {
+                    val str = response.body?.string().log()
+                    try {
+                        val result = Gson().fromJson(str, VideoComment::class.java)
+                        if (result.code == 0) {
+                            onSuccess(result)
+                        } else {
+                            onFailed(null)
+                            MainScope().launch {
+                                ToastUtils.showText("${result.code}: ${result.message}")
+                                ToastUtils.debugToast(str.log() ?: "")
+                            }
+                        }
+                    } catch (e: JsonSyntaxException) {
+                        MainScope().launch {
+                            ToastUtils.showText("请求错误")
+                            ToastUtils.debugToast(str.log() ?: "")
+                            onFailed(e)
+                        }
+                    }
+                }
+
+            })
+    }
+
+    fun getCommentReplies(
+        aid: Long,
+        rootCommentRpid: Long,
+        page: Int,
+        onFailed: (Exception?) -> Unit,
+        onSuccess: (CommentReply) -> Unit
+    ) {
+        NetworkUtils.getUrl(
+            "http://api.bilibili.com/x/v2/reply/reply?type=1&oid=$aid&root=$rootCommentRpid&pn=$page".log(),
+            object : Callback {
+                override fun onFailure(call: Call, e: IOException) {
+                    onFailed(e)
+                }
+
+                override fun onResponse(call: Call, response: Response) {
+                    val str = response.body?.string().log()
+                    try {
+                        val result = Gson().fromJson(str, CommentReply::class.java)
+                        if (result.code == 0) {
+                            onSuccess(result)
+                        } else {
+                            onFailed(null)
+                            MainScope().launch {
+                                ToastUtils.showText("${result.code}: ${result.message}")
+                                ToastUtils.debugToast(str.log() ?: "")
+                            }
+                        }
+                    } catch (e: JsonSyntaxException) {
+                        e.printStackTrace()
+                        MainScope().launch {
+                            ToastUtils.showText("请求错误")
+                            ToastUtils.debugToast(str.log() ?: "")
+                            onFailed(e)
+                        }
+                    }
+                }
+
+            })
+    }
+
     fun getOnlineCount(bvid: String, cid: Long, callback: Callback) {
         NetworkUtils.getUrl(
             "https://api.bilibili.com/x/player/online/total?bvid=$bvid&cid=$cid",
@@ -100,6 +181,9 @@ object VideoManager {
         )
     }
 
+    /**
+     * 貌似暂时没啥用，不过一定要用，不然传递太多东西可能会导致性能问题（或许？
+     */
     fun getVideoParts(bvid: String?, callback: Callback) {
         NetworkUtils.getUrl(
             "https://api.bilibili.com/x/player/pagelist?bvid=$bvid",
@@ -204,7 +288,7 @@ object VideoManager {
     fun isCoined(bvid: String, callback: NetworkUtils.ResultCallback<CoinState>) {
         if (!UserManager.isLoggedIn()) return
         NetworkUtils.getUrl(
-            "http://api.bilibili.com/x/web-interface/archive/coins?bvid=$bvid",
+            "http://api.bilibili.com/x/web-interface/archive/coins?bvid=$bvid".log(),
             object : Callback {
                 override fun onFailure(call: Call, e: IOException) {
                     callback.onFailed(e)
@@ -273,7 +357,12 @@ object VideoManager {
 
     fun searchVideoAll(keyword: String, page: Int, callback: NetworkUtils.ResultCallback<Search>) {
         NetworkUtils.getUrl(
-            "https://api.bilibili.com/x/web-interface/search/all/v2?page=$page&single_column=0&keyword=$keyword",
+            "https://api.bilibili.com/x/web-interface/search/all/v2?page=$page&single_column=0&keyword=${
+                URLEncoder.encode(
+                    keyword,
+                    "UTF-8"
+                )
+            }".log(),
             object : Callback {
                 override fun onFailure(call: Call, e: IOException) {
                     callback.onFailed(e)
@@ -305,14 +394,14 @@ object VideoManager {
 
     fun getWebRecommend(callback: NetworkUtils.ResultCallback<WebRecommendVideo>) {
         NetworkUtils.getUrl(
-            "https://api.bilibili.com/x/web-interface/index/top/rcmd?fresh_type=10&version=1&ps=5&fresh_idx=&fresh_idx_1h=&homepage_ver=1",
+            "https://api.bilibili.com/x/web-interface/index/top/rcmd?fresh_type=10&version=1&ps=8&fresh_idx=&fresh_idx_1h=&homepage_ver=1".log(),
             object : Callback {
                 override fun onFailure(call: Call, e: IOException) {
                     callback.onFailed(e)
                 }
 
                 override fun onResponse(call: Call, response: Response) {
-                    val str = response.body?.string()
+                    val str = response.body?.string().log()
                     try {
                         val result = Gson().fromJson(str, WebRecommendVideo::class.java)
                         if (result.code == 0) {

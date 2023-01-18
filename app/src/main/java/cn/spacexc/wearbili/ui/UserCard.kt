@@ -163,8 +163,8 @@ fun UserCard(
                                 .size(avatarBoxSize.times(0.2f))
                                 .align(Alignment.BottomEnd)
                                 .offset(
-                                    x = avatarBoxSize.times(-0.15f),
-                                    y = avatarBoxSize.times(-0.15f)
+                                    x = avatarBoxSize.times(-0.18f),
+                                    y = avatarBoxSize.times(-0.18f)
                                 )
                         )
                     }
@@ -177,7 +177,7 @@ fun UserCard(
                     Text(
                         text = name,
                         fontFamily = puhuiFamily,
-                        fontSize = 14.sp,
+                        fontSize = 10.sp,
                         fontWeight = FontWeight.Bold,
                         color = Color(android.graphics.Color.parseColor(nicknameColor)),
                         maxLines = 1

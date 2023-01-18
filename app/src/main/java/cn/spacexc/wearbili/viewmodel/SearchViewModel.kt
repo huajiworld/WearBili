@@ -33,12 +33,15 @@ class SearchViewModel : ViewModel() {
     private val _searchedVideosData =
         MutableLiveData<List<cn.spacexc.wearbili.dataclass.search.Result>>()
     val searchedUser = MutableLiveData<List<SearchedUser>>()
+    val searchedMediaBangumi = MutableLiveData<List<SearchedMediaFt>>()
     val searchedMediaFt = MutableLiveData<List<SearchedMediaFt>>()
     val searchedVideo = MutableLiveData<List<SearchedVideo>>()
     var page = 1
 
     private val _isRefreshing = MutableLiveData(false)
     val isRefreshing: LiveData<Boolean> = _isRefreshing
+
+    val isError = MutableLiveData(false)
 
     fun searchVideo(keyword: String, isRefresh: Boolean = false) {
         if (isRefresh) {
@@ -64,6 +67,15 @@ class SearchViewModel : ViewModel() {
                             object : TypeToken<List<SearchedMediaFt>>() {}.type
                         )
                         searchedMediaFt.value = mediaItems
+
+                        val bangumiTreeList =
+                            result.data.result.find { it.resultType == "media_bangumi" }
+                        val bangumiTree = Gson().toJsonTree(bangumiTreeList?.data)
+                        val bangumiItems: List<SearchedMediaFt> = Gson().fromJson(
+                            bangumiTree,
+                            object : TypeToken<List<SearchedMediaFt>>() {}.type
+                        )
+                        searchedMediaBangumi.value = bangumiItems
                     }
                     val videoList = result.data.result.find { it.resultType == "video" }
                     val videoTree = Gson().toJsonTree(videoList?.data)
@@ -88,6 +100,7 @@ class SearchViewModel : ViewModel() {
                 MainScope().launch {
                     ToastUtils.showText("网络异常")
                     _isRefreshing.value = false
+                    isError.value = true
                 }
             }
 
