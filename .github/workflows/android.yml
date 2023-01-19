@@ -25,7 +25,7 @@ jobs:
     - name: Build with Gradle
       run: ./gradlew assembleReleas
     - name: my-artifact
-      uses: action/upload-artifact@v3
+      uses: actions/upload-artifact@v3
       with:
        name: WearBili.apk
        path: ./app
