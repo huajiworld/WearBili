@@ -27,8 +27,7 @@ jobs:
     - name: upload my artifact
       uses: actions/upload-artifact@v3
       with:
-        name: WearBili
-        path: ./app
+         path: ./app/build/outputs/release/*.apk
     
     
 
